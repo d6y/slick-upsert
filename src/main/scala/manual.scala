@@ -45,7 +45,7 @@ object ManualExample extends App {
     } yield result
   }
 
-  println("Results of insertOrUpdate")
+  println("Results of updating Richard's review of Godzilla to 10")
   println(
     Await.result(
       db.run(
@@ -53,8 +53,9 @@ object ManualExample extends App {
       ),
       2 seconds)
   )
-  val future2 = db.run(reviews.result).map { _ foreach println }
-  Await.result(future2, 2 seconds)
+
+  println("Final database state")
+  Await.result( db.run(reviews.result).map { _ foreach println }, 2 seconds)
 
   db.close
 }
