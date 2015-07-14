@@ -10,7 +10,7 @@ object CompositePkExample extends App {
 
   final class ReviewTable(tag: Tag) extends Table[Review](tag, "review") {
     def critic = column[String]("critic_name")
-    def title  = column[String]("content")
+    def title  = column[String]("title")
     def rating = column[Int]("rating")
     def * = (critic, title, rating) <> (Review.tupled, Review.unapply)
     def pk = primaryKey("review_pk", (critic, title))
@@ -37,11 +37,13 @@ object CompositePkExample extends App {
 
   def postReview(critic: String, title: String, rating: Int): DBIO[Int] = for {
     existing <- reviews.filter(r => r.title === title && r.critic === critic).result.headOption
-    row       = existing getOrElse Review(critic, title, rating)
+    row       = existing.map(_.copy(rating=rating)) getOrElse Review(critic, title, rating)
     result  <- reviews.insertOrUpdate(row)
   } yield result
 
-  println("Results of insertOrUpdate")
+  // NB: https://github.com/slick/slick/issues/966
+
+  println("Results of insertOrUpdate of Godzilla (2014)")
   println(
     Await.result(
       db.run(
@@ -49,9 +51,8 @@ object CompositePkExample extends App {
       ),
       2 seconds)
   )
-// https://github.com/slick/slick/issues/966
-//  val future2 = db.run(reviews.result).map { _ foreach println }
-//  Await.result(future2, 2 seconds)
 
+  println("Final database state")
+  Await.result( db.run(reviews.result).map { _ foreach println }, 2 seconds)
   db.close
 }

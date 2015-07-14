@@ -10,7 +10,7 @@ object ManualExample extends App {
 
   final class ReviewTable(tag: Tag) extends Table[Review](tag, "review") {
     def critic = column[String]("critic_name")
-    def title  = column[String]("content")
+    def title  = column[String]("title")
     def rating = column[Int]("rating")
     def * = (critic, title, rating) <> (Review.tupled, Review.unapply)
   }

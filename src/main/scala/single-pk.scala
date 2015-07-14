@@ -10,7 +10,7 @@ object PkExample extends App {
 
   final class ReviewTable(tag: Tag) extends Table[Review](tag, "review") {
     def id      = column[Long]("id", O.PrimaryKey, O.AutoInc)
-    def title   = column[String]("content")
+    def title   = column[String]("title")
     def rating  = column[Int]("rating")
     def * = (title, rating, id) <> (Review.tupled, Review.unapply)
   }
@@ -37,27 +37,21 @@ object PkExample extends App {
 
   def postReview(title: String, rating: Int): DBIO[Int] = for {
     existing <- reviews.filter(_.title === title).result.headOption
-    row       = existing getOrElse Review(title, rating)
+    row       = existing.map(_.copy(rating=rating)) getOrElse Review(title, rating)
     result  <- reviews.insertOrUpdate(row)
   } yield result
 
-/*
-select 1 from "review" where "id"=?
-DEBUG slick.jdbc.JdbcBackend.statement - Preparing statement: update "review" set "content"=?,"rating"=? where "id"=?
-
-DEBUG slick.jdbc.JdbcBackend.statement - Preparing statement: select 1 from "review" where "id"=?
-DEBUG slick.jdbc.JdbcBackend.statement - Preparing statement: insert into "review" ("content","rating")  values (?,?)
-1
-*/
-
-  println("Results of insertOrUpdate")
+  println("Results of insertOrUpdate Godzilla to a 10 rating")
   println(
     Await.result(
       db.run(
-        postReview("Godzilla (2014)", 10)
+        postReview("Godzilla", 10)
       ),
       2 seconds)
   )
+
+  println("Final database state")
+  Await.result( db.run(reviews.result).map { _ foreach println }, 2 seconds)
 
   db.close
 }
