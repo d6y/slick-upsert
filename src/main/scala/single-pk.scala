@@ -49,6 +49,13 @@ object PkExample extends App {
     result  <- reviews.insertOrUpdate(row)
   } yield result
 
+  // Desugared version of postReview:
+  def postReviewLite(title: String, rating: Int): DBIO[Int] =
+    reviews.filter(_.title === title).result.headOption.map { existing =>
+      val row: Review = existing.map(_.copy(rating=rating)) getOrElse Review(title, rating)
+      row
+    }.flatMap { row => reviews.insertOrUpdate(row) }
+
   println("Results of insertOrUpdate Godzilla to a 10 rating")
   println(
     Await.result(
