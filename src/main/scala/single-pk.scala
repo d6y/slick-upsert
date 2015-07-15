@@ -35,6 +35,14 @@ object PkExample extends App {
   val future = db.run(actions).map { _ foreach println }
   Await.result(future, 2 seconds)
 
+
+  println("Upserting a new review")
+  val review: Review = Review("Godzilla (2014)", 10)
+  val upsertNew: DBIO[Int] = reviews.insertOrUpdate(review)
+  println(
+    Await.result(db.run(upsertNew),2 seconds)
+  )
+
   def postReview(title: String, rating: Int): DBIO[Int] = for {
     existing <- reviews.filter(_.title === title).result.headOption
     row       = existing.map(_.copy(rating=rating)) getOrElse Review(title, rating)
