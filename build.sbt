@@ -6,7 +6,7 @@ libraryDependencies ++= slick ++ h2 ++ logging
 
 lazy val slick = Seq("com.typesafe.slick" %% "slick" % "3.0.0")
 
-lazy val h2 = Seq("com.h2database" % "h2"              % "1.4.185")
+lazy val h2 = Seq("com.h2database" % "h2" % "1.4.187")
 
 lazy val logging = Seq("ch.qos.logback" % "logback-classic" % "1.1.2")
 

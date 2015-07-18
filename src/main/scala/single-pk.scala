@@ -9,7 +9,7 @@ object PkExample extends App {
   final case class Review(title: String, rating: Int, id: Long = 0L)
 
   final class ReviewTable(tag: Tag) extends Table[Review](tag, "review") {
-    def id      = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def id      = column[Long]("id", O.PrimaryKey)//, O.AutoInc)
     def title   = column[String]("title")
     def rating  = column[Int]("rating")
     def * = (title, rating, id) <> (Review.tupled, Review.unapply)
@@ -18,9 +18,9 @@ object PkExample extends App {
   val reviews = TableQuery[ReviewTable]
 
   val testData = Seq(
-    Review("Godzilla", 8),
-    Review("Godzilla Raids Again", 6),
-    Review("King Kong vs. Godzilla", 5)
+    Review("Godzilla", 8, 1),
+    Review("Godzilla Raids Again", 6, 2),
+    Review("King Kong vs. Godzilla", 5, 3)
   )
 
   val actions = for {
@@ -32,37 +32,27 @@ object PkExample extends App {
   val db = Database.forConfig("upsert")
 
   println("Results of inserting and selected data:")
-  val future = db.run(actions).map { _ foreach println }
+  val future = db.run(actions)//.map { _ foreach println }
   Await.result(future, 2 seconds)
 
-
+  {
   println("Upserting a new review")
-  val review: Review = Review("Godzilla (2014)", 10)
+  val review: Review = Review("Godzilla (2014)", 10, 4)
   val upsertNew: DBIO[Int] = reviews.insertOrUpdate(review)
   println(
     Await.result(db.run(upsertNew),2 seconds)
   )
+  }
 
-  def postReview(title: String, rating: Int): DBIO[Int] = for {
-    existing <- reviews.filter(_.title === title).result.headOption
-    row       = existing.map(_.copy(rating=rating)) getOrElse Review(title, rating)
-    result  <- reviews.insertOrUpdate(row)
-  } yield result
+  println("Upserting an existing review")
 
-  // Desugared version of postReview:
-  def postReviewLite(title: String, rating: Int): DBIO[Int] =
-    reviews.filter(_.title === title).result.headOption.map { existing =>
-      val row: Review = existing.map(_.copy(rating=rating)) getOrElse Review(title, rating)
-      row
-    }.flatMap { row => reviews.insertOrUpdate(row) }
+  val upsertExisting: DBIO[Int] = for {
+    existing <- reviews.filter(_.title === "Godzilla (2014)").result.head
+    rows     <- reviews.insertOrUpdate(existing.copy(rating=9))
+  } yield rows
 
-  println("Results of insertOrUpdate Godzilla to a 10 rating")
   println(
-    Await.result(
-      db.run(
-        postReview("Godzilla", 10)
-      ),
-      2 seconds)
+    Await.result(db.run(upsertExisting),2 seconds)
   )
 
   println("Final database state")
